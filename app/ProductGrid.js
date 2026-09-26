@@ -156,3 +156,26 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{p.name}</div>
                   <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "4px 0" }}>{fmt(p.price)} c/u</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+<button onClick={() => changeQty(id, -1)}>−</button>
+              <span>{qty}</span>
+              <button onClick={() => changeQty(id, 1)}>+</button>
+            </div>
+          </div>
+          <div style={{ fontWeight: 700 }}>{fmt(p.price * qty)}</div>
+        </div>
+      );
+    })}
+        </div>
+        <div className="drawer-foot">
+          <div className="subtotal-row">
+            <span>Subtotal</span>
+            <span>{fmt(subtotal)}</span>
+          </div>
+          <button className="checkout-btn" disabled={cartEntries.length === 0 || checkoutLoading} onClick={goToCheckout}>
+            {checkoutLoading ? "Redirigiendo..." : "Pagar con Mercado Pago"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
