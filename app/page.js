@@ -1,7 +1,6 @@
 import { supabase } from "../lib/supabaseClient";
 import ProductGrid from "./ProductGrid";
 
-// Vuelve a pedir los productos cada vez que alguien visita (sin caché vieja)
 export const revalidate = 0;
 
 export default async function Home() {
@@ -10,6 +9,10 @@ export default async function Home() {
     .select("*")
     .eq("active", true)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error consultando Supabase:", JSON.stringify(error));
+  }
 
   return (
     <>
@@ -20,7 +23,11 @@ export default async function Home() {
           </div>
         </div>
       </header>
-      <ProductGrid initialProducts={products || []} loadError={!!error} />
+      <ProductGrid
+        initialProducts={products || []}
+        loadError={!!error}
+        errorDetail={error ? error.message : null}
+      />
     </>
   );
 }
