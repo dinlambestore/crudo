@@ -9,13 +9,25 @@ function fmt(n) {
   return "$" + Number(n).toLocaleString("es-AR");
 }
 
+const ink = "var(--ink, #1C1C1C)";
+const line = "var(--line, #E6E2DC)";
+const soft = "var(--ink-soft, #7A7570)";
+
+const label = {
+  fontSize: 11,
+  textTransform: "uppercase",
+  letterSpacing: "0.22em",
+  marginBottom: 12,
+  color: ink,
+};
+
 export default function ProductDetail({ product: p }) {
   const images = (p.image_url || "").split(",").map((s) => s.trim()).filter(Boolean);
   const sizes = (p.sizes || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const mainColor = (p.colors || "").split(",").filter(Boolean)[0] || "#181510";
+  const mainColor = (p.colors || "").split(",").filter(Boolean)[0] || "#F2F0EC";
 
   const [current, setCurrent] = useState(0);
-  const [size, setSize] = useState(null);
+  const [size, setSize] = useState(sizes.length === 1 ? sizes[0] : null);
   const [qty, setQty] = useState(1);
   const [modo, setModo] = useState("total");
   const [loading, setLoading] = useState(false);
@@ -45,7 +57,7 @@ export default function ProductDetail({ product: p }) {
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
-      else setMsg("Error: " + JSON.stringify(data.error || data));
+      else setMsg("No se pudo iniciar el pago. Probá de nuevo.");
     } catch (e) {
       setMsg("Error al iniciar el pago.");
     } finally {
@@ -54,7 +66,6 @@ export default function ProductDetail({ product: p }) {
   }
 
   const mainImg = images[current];
-  const ink = "var(--ink, #181510)";
 
   const opciones = [
     { id: "total", titulo: "Pagar el total", detalle: fmt(total) },
@@ -66,13 +77,16 @@ export default function ProductDetail({ product: p }) {
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 60px" }}>
-      <Link href="/" style={{ fontSize: 14, color: "var(--ink-soft)", textDecoration: "none" }}>
+    <div style={{ maxWidth: 1160, margin: "0 auto", padding: "28px 20px 80px" }}>
+      <Link
+        href="/"
+        style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: soft, textDecoration: "none" }}
+      >
         ← Volver a la tienda
       </Link>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 40, marginTop: 20 }}>
-        <div style={{ flex: "1 1 360px", maxWidth: 560 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 56, marginTop: 24 }}>
+        <div style={{ flex: "1 1 360px", maxWidth: 580 }}>
           <div
             style={{
               aspectRatio: "3 / 4",
@@ -83,11 +97,7 @@ export default function ProductDetail({ product: p }) {
               position: "relative",
             }}
           >
-            {p.tag && (
-              <span className="card-tag" style={{ position: "absolute", top: 12, left: 12 }}>
-                {p.tag}
-              </span>
-            )}
+            {p.tag && <span className="card-tag">{p.tag}</span>}
           </div>
 
           {images.length > 1 && (
@@ -98,15 +108,16 @@ export default function ProductDetail({ product: p }) {
                   onClick={() => setCurrent(i)}
                   aria-label={`Ver foto ${i + 1}`}
                   style={{
-                    width: 72,
-                    height: 96,
+                    width: 68,
+                    height: 90,
                     padding: 0,
                     cursor: "pointer",
                     backgroundImage: `url("${img}")`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    border: i === current ? `2px solid ${ink}` : "1px solid #ddd",
-                    opacity: i === current ? 1 : 0.7,
+                    border: `1px solid ${i === current ? ink : "transparent"}`,
+                    opacity: i === current ? 1 : 0.6,
+                    transition: "opacity .2s",
                   }}
                 />
               ))}
@@ -114,14 +125,16 @@ export default function ProductDetail({ product: p }) {
           )}
         </div>
 
-        <div style={{ flex: "1 1 300px" }}>
-          <div style={{ fontSize: 13, textTransform: "capitalize", color: "var(--ink-soft)" }}>{p.category}</div>
-          <h1 style={{ fontSize: 28, margin: "6px 0 10px" }}>{p.name}</h1>
-          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>{fmt(p.price)}</div>
+        <div style={{ flex: "1 1 320px", maxWidth: 440 }}>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.25em", color: soft }}>
+            {p.category}
+          </div>
+          <h1 style={{ fontSize: 36, fontWeight: 400, lineHeight: 1.15, margin: "10px 0 12px" }}>{p.name}</h1>
+          <div style={{ fontSize: 17, fontWeight: 300, letterSpacing: "0.08em", marginBottom: 32 }}>{fmt(p.price)}</div>
 
           {sizes.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Talle</div>
+            <div style={{ marginBottom: 28 }}>
+              <div style={label}>Talle</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {sizes.map((s) => (
                   <button
@@ -131,13 +144,16 @@ export default function ProductDetail({ product: p }) {
                       setMsg("");
                     }}
                     style={{
-                      minWidth: 48,
-                      padding: "10px 12px",
+                      minWidth: 46,
+                      padding: "10px 14px",
                       cursor: "pointer",
-                      fontWeight: 600,
-                      border: `1px solid ${ink}`,
+                      fontSize: 12,
+                      fontWeight: 400,
+                      letterSpacing: "0.1em",
+                      border: `1px solid ${size === s ? ink : line}`,
                       background: size === s ? ink : "transparent",
                       color: size === s ? "#fff" : ink,
+                      transition: "all .2s",
                     }}
                   >
                     {s}
@@ -147,48 +163,59 @@ export default function ProductDetail({ product: p }) {
             </div>
           )}
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Cantidad</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} style={{ fontSize: 20, padding: "4px 12px", cursor: "pointer" }}>−</button>
-              <span style={{ fontWeight: 600 }}>{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} style={{ fontSize: 20, padding: "4px 12px", cursor: "pointer" }}>+</button>
+          <div style={{ marginBottom: 28 }}>
+            <div style={label}>Cantidad</div>
+            <div style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${line}` }}>
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} style={{ fontSize: 16, padding: "8px 16px", cursor: "pointer" }} aria-label="Restar">
+                −
+              </button>
+              <span style={{ minWidth: 28, textAlign: "center", fontSize: 14 }}>{qty}</span>
+              <button onClick={() => setQty((q) => q + 1)} style={{ fontSize: 16, padding: "8px 16px", cursor: "pointer" }} aria-label="Sumar">
+                +
+              </button>
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Forma de compra</div>
+          <div style={{ marginBottom: 24 }}>
+            <div style={label}>Forma de compra</div>
             {opciones.map((o) => (
               <label
                 key={o.id}
                 style={{
                   display: "flex",
-                  gap: 10,
+                  gap: 12,
                   alignItems: "flex-start",
-                  padding: "12px 14px",
+                  padding: "14px 16px",
                   marginBottom: 8,
                   cursor: "pointer",
-                  border: modo === o.id ? `2px solid ${ink}` : "1px solid #ddd",
+                  border: `1px solid ${modo === o.id ? ink : line}`,
+                  transition: "border-color .2s",
                 }}
               >
-                <input type="radio" name="modo" checked={modo === o.id} onChange={() => setModo(o.id)} style={{ marginTop: 3 }} />
+                <input
+                  type="radio"
+                  name="modo"
+                  checked={modo === o.id}
+                  onChange={() => setModo(o.id)}
+                  style={{ marginTop: 3, accentColor: "#1C1C1C" }}
+                />
                 <span>
-                  <span style={{ display: "block", fontWeight: 600 }}>{o.titulo}</span>
-                  <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>{o.detalle}</span>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 400 }}>{o.titulo}</span>
+                  <span style={{ fontSize: 12, color: soft }}>{o.detalle}</span>
                 </span>
               </label>
             ))}
           </div>
 
-          <button className="checkout-btn" onClick={comprar} disabled={loading} style={{ width: "100%" }}>
+          <button className="checkout-btn" onClick={comprar} disabled={loading}>
             {loading ? "Redirigiendo..." : modo === "sena" ? `Pagar seña de ${fmt(sena)}` : "Comprar con Mercado Pago"}
           </button>
-          {msg && <p style={{ color: "#b3261e", marginTop: 10 }}>{msg}</p>}
+          {msg && <p style={{ color: "#9B2C1F", marginTop: 12, fontSize: 13 }}>{msg}</p>}
 
           {p.description && (
-            <div style={{ marginTop: 32, lineHeight: 1.6, whiteSpace: "pre-line" }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>Descripción</div>
-              {p.description}
+            <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${line}` }}>
+              <div style={label}>Descripción</div>
+              <div style={{ fontSize: 14, lineHeight: 1.8, color: soft, whiteSpace: "pre-line" }}>{p.description}</div>
             </div>
           )}
         </div>
