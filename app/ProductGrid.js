@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import CustomerForm, { emptyCustomer, validateCustomer } from "./CustomerForm";
+import { calcularPromo, PROMO_MIN_PRENDAS, PROMO_DESCUENTO, PROMO_MONTO } from "../lib/promo";
 
 const CATEGORY_LABELS = {
   remeras: "Remeras",
@@ -34,6 +36,8 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [hoverId, setHoverId] = useState(null);
+  const [customer, setCustomer] = useState(emptyCustomer);
+  const [cartMsg, setCartMsg] = useState("");
 
   const categories = useMemo(() => {
     const set = new Set(initialProducts.map((p) => p.category));
@@ -67,12 +71,23 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
 
   const cartEntries = Object.entries(cart);
   const cartCount = cartEntries.reduce((sum, [, qty]) => sum + qty, 0);
-  const subtotal = cartEntries.reduce((sum, [id, qty]) => {
-    const p = initialProducts.find((pr) => String(pr.id) === String(id));
-    return sum + (p ? p.price * qty : 0);
-  }, 0);
+  const promo = calcularPromo(
+    cartEntries
+      .map(([id, qty]) => {
+        const p = initialProducts.find((pr) => String(pr.id) === String(id));
+        return p ? { id: p.id, price: p.price, quantity: qty } : null;
+      })
+      .filter(Boolean)
+  );
+  const pct = Math.round(PROMO_DESCUENTO * 100);
 
   async function goToCheckout() {
+    const err = validateCustomer(customer, false);
+    if (err) {
+      setCartMsg(err);
+      return;
+    }
+    setCartMsg("");
     setCheckoutLoading(true);
     try {
       const items = cartEntries.map(([id, qty]) => ({ id, quantity: qty }));
@@ -83,23 +98,26 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
         })
         .filter(Boolean)
         .join(", ");
-      try {
-        localStorage.setItem("crudo_pedido", JSON.stringify({ modo: "total", detalle }));
-      } catch (e) {}
 
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "total", items }),
+        body: JSON.stringify({ mode: "total", items, customer }),
       });
       const data = await res.json();
       if (data.init_point) {
+        try {
+          localStorage.setItem(
+            "crudo_pedido",
+            JSON.stringify({ modo: "total", detalle, delivery: customer.delivery, orderId: data.order_id })
+          );
+        } catch (e) {}
         window.location.href = data.init_point;
       } else {
-        alert("No se pudo iniciar el pago. Probá de nuevo.");
+        setCartMsg(typeof data.error === "string" ? data.error : "No se pudo iniciar el pago. Probá de nuevo.");
       }
     } catch (e) {
-      alert("Error al iniciar el pago.");
+      setCartMsg("Error al iniciar el pago.");
     } finally {
       setCheckoutLoading(false);
     }
@@ -200,7 +218,14 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
               <div className="drawer-item" key={id}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "var(--serif)", fontSize: 18 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "4px 0 8px" }}>{fmt(p.price)} c/u</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "4px 0 8px" }}>
+                    {fmt(p.price)} c/u
+                    {promo.aplicaA(p.id) ? (
+                      <span style={{ color: "#2E7D4F" }}> · {pct}% OFF</span>
+                    ) : (
+                      <span> · {PROMO_MIN_PRENDAS - qty} más y tenés precio mayorista</span>
+                    )}
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <button onClick={() => changeQty(id, -1)} aria-label="Restar">−</button>
                     <span>{qty}</span>
@@ -211,15 +236,46 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
               </div>
             );
           })}
+          {cartEntries.length > 0 && (
+            <div style={{ padding: "20px 0" }}>
+              <CustomerForm value={customer} onChange={setCustomer} forceRetiro={false} />
+            </div>
+          )}
         </div>
         <div className="drawer-foot">
-          <div className="subtotal-row">
-            <span>Subtotal</span>
-            <span>{fmt(subtotal)}</span>
-          </div>
+          {promo.aplica ? (
+            <>
+              <div className="subtotal-row" style={{ marginBottom: 6, color: "var(--ink-soft)" }}>
+                <span>Subtotal</span>
+                <span>{fmt(promo.subtotal)}</span>
+              </div>
+              <div className="subtotal-row" style={{ marginBottom: 6, color: "#2E7D4F" }}>
+                <span>Beneficio mayorista {pct}%</span>
+                <span>-{fmt(promo.descuento)}</span>
+              </div>
+              <div className="subtotal-row">
+                <span>Total</span>
+                <span>{fmt(promo.total)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="subtotal-row">
+                <span>Total</span>
+                <span>{fmt(promo.total)}</span>
+              </div>
+              {cartCount > 0 && (
+                <div className="form-hint" style={{ margin: "-8px 0 14px" }}>
+                  Beneficio mayorista: {pct}% OFF llevando {PROMO_MIN_PRENDAS} o más del mismo artículo, o en toda la compra
+                  superando {fmt(PROMO_MONTO)} (te faltan {fmt(promo.faltaMonto)}).
+                </div>
+              )}
+            </>
+          )}
           <button className="checkout-btn" disabled={cartEntries.length === 0 || checkoutLoading} onClick={goToCheckout}>
             {checkoutLoading ? "Redirigiendo..." : "Pagar con Mercado Pago"}
           </button>
+          {cartMsg && <p style={{ color: "#9B2C1F", marginTop: 10, fontSize: 13 }}>{cartMsg}</p>}
         </div>
       </div>
     </>

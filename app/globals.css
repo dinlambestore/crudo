@@ -84,6 +84,18 @@ aside.filters{padding-right:16px; align-self:start; position:sticky; top:90px;}
 header .header-top{height:76px; padding-top:0; padding-bottom:0;}
 .cart-bar{position:fixed; top:0; right:0; height:76px; display:flex; align-items:center; padding:0 24px; z-index:45;}
 
+/* Formulario de datos del cliente */
+.customer-form{margin:8px 0 22px;}
+.form-title{font-size:11px; text-transform:uppercase; letter-spacing:0.22em; margin-bottom:12px; color:var(--ink);}
+.field{display:block; width:100%; border:1px solid var(--line); padding:12px 14px; font-family:var(--sans); font-size:14px; font-weight:300; color:var(--ink); background:#fff; margin-bottom:10px; border-radius:0; -webkit-appearance:none;}
+.field:focus{outline:none; border-color:var(--ink);}
+textarea.field{resize:vertical;}
+.delivery-opts{display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+.delivery-opt{flex:1 1 140px; display:flex; align-items:center; gap:8px; border:1px solid var(--line); padding:11px 12px; font-size:13px; cursor:pointer;}
+.delivery-opt.on{border-color:var(--ink);}
+.delivery-opt input{accent-color:var(--ink);}
+.form-hint{font-size:12px; color:var(--ink-soft); margin:-4px 0 10px;}
+
 /* Celular y tablet */
 @media (max-width:900px){
   .shop{grid-template-columns:1fr; gap:16px; padding:20px 16px 80px;}
