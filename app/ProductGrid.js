@@ -15,6 +15,15 @@ function catLabel(cat) {
   return CATEGORY_LABELS[String(cat || "").toLowerCase()] || cat;
 }
 
+function mainHex(str) {
+  const parts = (str || "").split(",").map((s) => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    const hex = part.includes(":") ? part.split(":")[1].trim() : part;
+    if (hex.startsWith("#")) return hex;
+  }
+  return "#F2F0EC";
+}
+
 function fmt(n) {
   return "$" + Number(n).toLocaleString("es-AR");
 }
@@ -109,7 +118,7 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
         </button>
       </div>
 
-      <div className="shop">
+      <div className="shop" id="productos">
         <aside className="filters">
           <div className="filter-group">
             <h3>Categoría</h3>
@@ -136,8 +145,7 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
           )}
           <div className="grid">
             {filtered.map((p) => {
-              const colors = (p.colors || "").split(",").filter(Boolean);
-              const mainColor = colors[0] || "#F2F0EC";
+              const mainColor = mainHex(p.colors);
               const images = (p.image_url || "").split(",").map((s) => s.trim()).filter(Boolean);
               const img = hoverId === p.id && images[1] ? images[1] : images[0];
               return (

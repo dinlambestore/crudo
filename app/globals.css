@@ -34,6 +34,17 @@ header .header-top{justify-content:center;}
 .cart-btn{position:relative; display:flex; align-items:center; gap:8px; padding:8px 0; font-size:11px; font-weight:400; text-transform:uppercase; letter-spacing:0.2em; color:var(--ink);}
 .cart-count{background:var(--ink); color:var(--white); font-size:10px; font-weight:400; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; border-radius:50%; letter-spacing:0;}
 
+/* Portada */
+.hero{position:relative; height:78vh; min-height:420px; background-color:#EFECE7; background-size:cover; background-position:center 30%; display:flex; align-items:flex-end; justify-content:center;}
+.hero::after{content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.35), rgba(0,0,0,0) 55%);}
+.hero-content{position:relative; z-index:1; text-align:center; color:#fff; padding:0 20px 64px;}
+.hero-kicker{font-size:11px; text-transform:uppercase; letter-spacing:0.3em; margin-bottom:14px;}
+.hero-title{font-family:var(--serif); font-weight:300; font-size:52px; line-height:1.1; margin-bottom:26px;}
+.hero-btn{display:inline-block; border:1px solid #fff; color:#fff; text-decoration:none; padding:13px 34px; font-size:11px; text-transform:uppercase; letter-spacing:0.25em; transition:background .2s, color .2s;}
+@media (hover:hover){ .hero-btn:hover{background:#fff; color:var(--ink);} }
+html{scroll-behavior:smooth;}
+#productos{scroll-margin-top:80px;}
+
 /* Tienda */
 .shop{max-width:1280px; margin:0 auto; padding:36px 24px 100px; display:grid; grid-template-columns:200px 1fr; gap:40px;}
 aside.filters{padding-right:16px; align-self:start; position:sticky; top:90px;}
@@ -85,4 +96,7 @@ header .header-top{height:76px; padding-top:0; padding-bottom:0;}
   header .header-top{height:64px;}
   .cart-bar{height:64px; padding:0 16px;}
   .cart-label{display:none;}
+  .hero{height:68vh; min-height:380px;}
+  .hero-title{font-size:36px;}
+  .hero-content{padding-bottom:44px;}
 }
