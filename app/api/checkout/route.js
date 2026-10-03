@@ -1,7 +1,13 @@
-export async function POST(request) {
-  const { items } = await request.json();
+import { supabase } from "../../../lib/supabaseClient";
 
-  if (!items || items.length === 0) {
+const SENA = 15000;
+
+export async function POST(request) {
+  const body = await request.json();
+  const items = Array.isArray(body.items) ? body.items : [];
+  const mode = body.mode === "sena" ? "sena" : "total";
+
+  if (items.length === 0) {
     return Response.json({ error: "Carrito vacío" }, { status: 400 });
   }
 
@@ -13,13 +19,50 @@ export async function POST(request) {
     return Response.json({ error: "Falta configurar el token de Mercado Pago" }, { status: 500 });
   }
 
-  const preference = {
-    items: items.map((item) => ({
-      title: item.name,
-      quantity: item.quantity,
-      unit_price: Number(item.price),
+  const ids = items.map((i) => i.id);
+  const { data: productos, error: dbError } = await supabase
+    .from("products")
+    .select("id, name, price, sizes, active")
+    .in("id", ids);
+
+  if (dbError) {
+    console.error("Error leyendo productos:", JSON.stringify(dbError));
+    return Response.json({ error: "No se pudieron leer los productos" }, { status: 500 });
+  }
+
+  const lineas = [];
+  for (const item of items) {
+    const prod = (productos || []).find((pr) => String(pr.id) === String(item.id));
+    if (!prod || !prod.active) {
+      return Response.json({ error: "Producto no disponible" }, { status: 400 });
+    }
+    const cantidad = Math.min(20, Math.max(1, Math.floor(Number(item.quantity) || 1)));
+    const talles = (prod.sizes || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const talle = item.size && talles.includes(item.size) ? item.size : null;
+    lineas.push({
+      title: talle ? `${prod.name} - Talle ${talle}` : prod.name,
+      quantity: cantidad,
+      unit_price: Number(prod.price),
       currency_id: "ARS",
-    })),
+    });
+  }
+
+  const total = lineas.reduce((s, l) => s + l.unit_price * l.quantity, 0);
+
+  const mpItems =
+    mode === "sena"
+      ? [
+          {
+            title: `Seña retiro en local: ${lineas.map((l) => `${l.title} x${l.quantity}`).join(", ")}`.slice(0, 250),
+            quantity: 1,
+            unit_price: Math.min(SENA, total),
+            currency_id: "ARS",
+          },
+        ]
+      : lineas;
+
+  const preference = {
+    items: mpItems,
     back_urls: {
       success: `${siteUrl}/gracias`,
       failure: `${siteUrl}/`,
@@ -40,26 +83,4 @@ export async function POST(request) {
       body: JSON.stringify(preference),
     });
     rawText = await mpRes.text();
-  } catch (e) {
-    console.error("Error de red al llamar a Mercado Pago:", e.message);
-    return Response.json({ error: "No se pudo conectar con Mercado Pago" }, { status: 500 });
-  }
-
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    console.error("Respuesta no-JSON de Mercado Pago. Status:", mpRes.status, "Body:", rawText);
-    return Response.json(
-      { error: `Mercado Pago respondió status ${mpRes.status}: ${rawText.slice(0, 200)}` },
-      { status: 500 }
-    );
-  }
-
-  if (!mpRes.ok) {
-    console.error("Mercado Pago devolvió error:", JSON.stringify(data));
-    return Response.json({ error: data }, { status: 500 });
-  }
-
-  return Response.json({ init_point: data.init_point });
-}
+  } catch (e)
