@@ -21,13 +21,30 @@ const label = {
   color: ink,
 };
 
+function parseColors(str) {
+  return (str || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((part) => {
+      if (part.includes(":")) {
+        const [name, hex] = part.split(":").map((x) => x.trim());
+        return { name, hex };
+      }
+      return part.startsWith("#") ? { name: null, hex: part } : { name: part, hex: null };
+    });
+}
+
 export default function ProductDetail({ product: p }) {
   const images = (p.image_url || "").split(",").map((s) => s.trim()).filter(Boolean);
   const sizes = (p.sizes || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const mainColor = (p.colors || "").split(",").filter(Boolean)[0] || "#F2F0EC";
+  const colorList = parseColors(p.colors);
+  const colorOpts = colorList.filter((c) => c.name);
+  const mainColor = (colorList.find((c) => c.hex) || {}).hex || "#F2F0EC";
 
   const [current, setCurrent] = useState(0);
   const [size, setSize] = useState(sizes.length === 1 ? sizes[0] : null);
+  const [color, setColor] = useState(colorOpts.length === 1 ? colorOpts[0].name : null);
   const [qty, setQty] = useState(1);
   const [modo, setModo] = useState("total");
   const [loading, setLoading] = useState(false);
@@ -37,6 +54,10 @@ export default function ProductDetail({ product: p }) {
   const sena = Math.min(SENA, total);
 
   async function comprar() {
+    if (colorOpts.length > 0 && !color) {
+      setMsg("Elegí un color.");
+      return;
+    }
     if (sizes.length > 0 && !size) {
       setMsg("Elegí un talle.");
       return;
@@ -44,7 +65,7 @@ export default function ProductDetail({ product: p }) {
     setMsg("");
     setLoading(true);
 
-    const detalle = `${p.name}${size ? `, talle ${size}` : ""}, cantidad ${qty}`;
+    const detalle = `${p.name}${color ? `, color ${color}` : ""}${size ? `, talle ${size}` : ""}, cantidad ${qty}`;
     try {
       localStorage.setItem("crudo_pedido", JSON.stringify({ modo, detalle }));
     } catch (e) {}
@@ -53,7 +74,7 @@ export default function ProductDetail({ product: p }) {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: modo, items: [{ id: p.id, size, quantity: qty }] }),
+        body: JSON.stringify({ mode: modo, items: [{ id: p.id, size, color, quantity: qty }] }),
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
@@ -131,6 +152,38 @@ export default function ProductDetail({ product: p }) {
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 400, lineHeight: 1.15, margin: "10px 0 12px" }}>{p.name}</h1>
           <div style={{ fontSize: 17, fontWeight: 300, letterSpacing: "0.08em", marginBottom: 32 }}>{fmt(p.price)}</div>
+
+          {colorOpts.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={label}>
+                Color{color ? <span style={{ color: soft, letterSpacing: "0.1em", textTransform: "none", fontSize: 13 }}> · {color}</span> : null}
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {colorOpts.map((c) => (
+                  <button
+                    key={c.name}
+                    onClick={() => {
+                      setColor(c.name);
+                      setMsg("");
+                    }}
+                    aria-label={`Color ${c.name}`}
+                    title={c.name}
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      padding: 0,
+                      cursor: "pointer",
+                      background: c.hex || "#ddd",
+                      border: "1px solid rgba(0,0,0,0.15)",
+                      outline: color === c.name ? `1px solid ${ink}` : "none",
+                      outlineOffset: 3,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {sizes.length > 0 && (
             <div style={{ marginBottom: 28 }}>
