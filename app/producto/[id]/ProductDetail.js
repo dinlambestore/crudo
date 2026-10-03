@@ -45,7 +45,7 @@ export default function ProductDetail({ product: p }) {
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
-      else setMsg("No se pudo iniciar el pago. Probá de nuevo.");
+      else setMsg("Error: " + JSON.stringify(data.error || data));
     } catch (e) {
       setMsg("Error al iniciar el pago.");
     } finally {
