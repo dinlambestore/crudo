@@ -52,7 +52,7 @@ aside.filters{padding-right:16px; align-self:start; position:sticky; top:90px;}
 .card-name{font-family:var(--serif); font-size:20px; font-weight:400; margin-bottom:6px;}
 .card-price{font-size:13px; font-weight:400; letter-spacing:0.08em;}
 .add-btn{margin-top:14px; width:100%; background:transparent; color:var(--ink); border:1px solid var(--ink); padding:11px; font-size:11px; font-weight:400; text-transform:uppercase; letter-spacing:0.2em; transition:background .2s, color .2s;}
-.add-btn:hover{background:var(--ink); color:var(--white);}
+@media (hover:hover){ .add-btn:hover{background:var(--ink); color:var(--white);} }
 
 /* Carrito */
 .overlay{position:fixed; inset:0; background:rgba(28,28,28,0.35); opacity:0; pointer-events:none; transition:opacity .2s; z-index:50;}
@@ -69,6 +69,10 @@ aside.filters{padding-right:16px; align-self:start; position:sticky; top:90px;}
 .checkout-btn:hover{opacity:0.85;}
 .checkout-btn:disabled{opacity:0.4;}
 
+/* Carrito arriba a la derecha, en la misma línea del logo */
+header .header-top{height:76px; padding-top:0; padding-bottom:0;}
+.cart-bar{position:fixed; top:0; right:0; height:76px; display:flex; align-items:center; padding:0 24px; z-index:45;}
+
 /* Celular y tablet */
 @media (max-width:900px){
   .shop{grid-template-columns:1fr; gap:16px; padding:20px 16px 80px;}
@@ -78,4 +82,7 @@ aside.filters{padding-right:16px; align-self:start; position:sticky; top:90px;}
   .grid{grid-template-columns:repeat(2,1fr); gap:28px 12px;}
   .logo{font-size:26px;}
   .card-name{font-size:17px;}
+  header .header-top{height:64px;}
+  .cart-bar{height:64px; padding:0 16px;}
+  .cart-label{display:none;}
 }
