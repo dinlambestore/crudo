@@ -127,11 +127,13 @@ const img = hoverId === p.id && images[1] ? images[1] : images[0];
   className="card-media"
   onMouseEnter={() => setHoverId(p.id)}
   onMouseLeave={() => setHoverId(null)}
+                          onClick={() => (window.location.href = `/producto/${p.id}`)}
   style={{
     backgroundColor: mainColor,
     backgroundImage: img ? `url("${img}")` : "none",
     backgroundSize: "cover",
     backgroundPosition: "center",
+    cursor: "pointer",
   }}
 >
                     {p.tag && <span className="card-tag">{p.tag}</span>}
