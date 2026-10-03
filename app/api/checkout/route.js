@@ -22,7 +22,7 @@ export async function POST(request) {
   const ids = items.map((i) => i.id);
   const { data: productos, error: dbError } = await supabase
     .from("products")
-    .select("id, name, price, sizes, active")
+    .select("id, name, price, sizes, colors, active")
     .in("id", ids);
 
   if (dbError) {
@@ -39,8 +39,13 @@ export async function POST(request) {
     const cantidad = Math.min(20, Math.max(1, Math.floor(Number(item.quantity) || 1)));
     const talles = (prod.sizes || "").split(",").map((s) => s.trim()).filter(Boolean);
     const talle = item.size && talles.includes(item.size) ? item.size : null;
+    const colores = (prod.colors || "")
+      .split(",")
+      .map((s) => s.split(":")[0].trim())
+      .filter((s) => s && !s.startsWith("#"));
+    const color = item.color && colores.includes(item.color) ? item.color : null;
     lineas.push({
-      title: talle ? `${prod.name} - Talle ${talle}` : prod.name,
+      title: `${prod.name}${color ? ` - ${color}` : ""}${talle ? ` - Talle ${talle}` : ""}`,
       quantity: cantidad,
       unit_price: Number(prod.price),
       currency_id: "ARS",
