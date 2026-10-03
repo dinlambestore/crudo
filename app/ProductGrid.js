@@ -63,7 +63,7 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
     try {
       const items = cartEntries.map(([id, qty]) => {
         const p = initialProducts.find((pr) => String(pr.id) === String(id));
-        return { name: p.name, price: p.price, quantity: qty };
+       return { id: p.id, quantity: qty };
       });
       const res = await fetch("/api/checkout", {
         method: "POST",
