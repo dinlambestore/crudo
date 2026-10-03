@@ -83,4 +83,26 @@ export async function POST(request) {
       body: JSON.stringify(preference),
     });
     rawText = await mpRes.text();
-  } catch (e)
+  } catch (e) {
+    console.error("Error de red al llamar a Mercado Pago:", e.message);
+    return Response.json({ error: "No se pudo conectar con Mercado Pago" }, { status: 500 });
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (e) {
+    console.error("Respuesta no-JSON de Mercado Pago. Status:", mpRes.status, "Body:", rawText);
+    return Response.json(
+      { error: `Mercado Pago respondió status ${mpRes.status}: ${rawText.slice(0, 200)}` },
+      { status: 500 }
+    );
+  }
+
+  if (!mpRes.ok) {
+    console.error("Mercado Pago devolvió error:", JSON.stringify(data));
+    return Response.json({ error: data }, { status: 500 });
+  }
+
+  return Response.json({ init_point: data.init_point });
+}
