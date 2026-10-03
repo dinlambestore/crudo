@@ -19,6 +19,7 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
   const [cart, setCart] = useState({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [hoverId, setHoverId] = useState(null);
 
   const categories = useMemo(() => {
     const set = new Set(initialProducts.map((p) => p.category));
@@ -118,13 +119,17 @@ export default function ProductGrid({ initialProducts, loadError, errorDetail })
             {filtered.map((p) => {
               const colors = (p.colors || "").split(",").filter(Boolean);
               const mainColor = colors[0] || "#181510";
+              const images = (p.image_url || "").split(",").map((s) => s.trim()).filter(Boolean);
+const img = hoverId === p.id && images[1] ? images[1] : images[0];
               return (
                 <div className="card" key={p.id}>
                   <div
   className="card-media"
+  onMouseEnter={() => setHoverId(p.id)}
+  onMouseLeave={() => setHoverId(null)}
   style={{
     backgroundColor: mainColor,
-    backgroundImage: p.image_url ? `url("${p.image_url}")` : "none",
+    backgroundImage: img ? `url("${img}")` : "none",
     backgroundSize: "cover",
     backgroundPosition: "center",
   }}
