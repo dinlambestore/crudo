@@ -28,8 +28,9 @@ function parseColors(str) {
     .filter(Boolean)
     .map((part) => {
       if (part.includes(":")) {
-        const [name, hex] = part.split(":").map((x) => x.trim());
-        return { name, hex };
+        const [name, hex, foto] = part.split(":").map((x) => x.trim());
+        const n = parseInt(foto, 10);
+        return { name, hex, foto: Number.isFinite(n) && n > 0 ? n : null };
       }
       return part.startsWith("#") ? { name: null, hex: part } : { name: part, hex: null };
     });
@@ -126,7 +127,11 @@ export default function ProductDetail({ product: p }) {
               {images.map((img, i) => (
                 <button
                   key={img}
-                  onClick={() => setCurrent(i)}
+                  onClick={() => {
+                    setCurrent(i);
+                    const match = colorOpts.find((c) => c.foto === i + 1);
+                    if (match) setColor(match.name);
+                  }}
                   aria-label={`Ver foto ${i + 1}`}
                   style={{
                     width: 68,
@@ -165,6 +170,7 @@ export default function ProductDetail({ product: p }) {
                     onClick={() => {
                       setColor(c.name);
                       setMsg("");
+                      if (c.foto && c.foto <= images.length) setCurrent(c.foto - 1);
                     }}
                     aria-label={`Color ${c.name}`}
                     title={c.name}
