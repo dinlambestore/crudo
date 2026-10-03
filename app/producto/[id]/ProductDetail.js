@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const SENA = 15000;
+
 function fmt(n) {
   return "$" + Number(n).toLocaleString("es-AR");
 }
@@ -15,8 +17,12 @@ export default function ProductDetail({ product: p }) {
   const [current, setCurrent] = useState(0);
   const [size, setSize] = useState(null);
   const [qty, setQty] = useState(1);
+  const [modo, setModo] = useState("total");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const total = p.price * qty;
+  const sena = Math.min(SENA, total);
 
   async function comprar() {
     if (sizes.length > 0 && !size) {
@@ -25,13 +31,17 @@ export default function ProductDetail({ product: p }) {
     }
     setMsg("");
     setLoading(true);
+
+    const detalle = `${p.name}${size ? `, talle ${size}` : ""}, cantidad ${qty}`;
+    try {
+      localStorage.setItem("crudo_pedido", JSON.stringify({ modo, detalle }));
+    } catch (e) {}
+
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: [{ name: size ? `${p.name} - Talle ${size}` : p.name, price: p.price, quantity: qty }],
-        }),
+        body: JSON.stringify({ mode: modo, items: [{ id: p.id, size, quantity: qty }] }),
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
@@ -45,6 +55,15 @@ export default function ProductDetail({ product: p }) {
 
   const mainImg = images[current];
   const ink = "var(--ink, #181510)";
+
+  const opciones = [
+    { id: "total", titulo: "Pagar el total", detalle: fmt(total) },
+    {
+      id: "sena",
+      titulo: "Pagar seña y retirar en el local",
+      detalle: `${fmt(sena)} ahora y ${fmt(Math.max(0, total - sena))} al retirar`,
+    },
+  ];
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 60px" }}>
@@ -137,8 +156,32 @@ export default function ProductDetail({ product: p }) {
             </div>
           </div>
 
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Forma de compra</div>
+            {opciones.map((o) => (
+              <label
+                key={o.id}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  padding: "12px 14px",
+                  marginBottom: 8,
+                  cursor: "pointer",
+                  border: modo === o.id ? `2px solid ${ink}` : "1px solid #ddd",
+                }}
+              >
+                <input type="radio" name="modo" checked={modo === o.id} onChange={() => setModo(o.id)} style={{ marginTop: 3 }} />
+                <span>
+                  <span style={{ display: "block", fontWeight: 600 }}>{o.titulo}</span>
+                  <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>{o.detalle}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+
           <button className="checkout-btn" onClick={comprar} disabled={loading} style={{ width: "100%" }}>
-            {loading ? "Redirigiendo..." : "Comprar con Mercado Pago"}
+            {loading ? "Redirigiendo..." : modo === "sena" ? `Pagar seña de ${fmt(sena)}` : "Comprar con Mercado Pago"}
           </button>
           {msg && <p style={{ color: "#b3261e", marginTop: 10 }}>{msg}</p>}
 
