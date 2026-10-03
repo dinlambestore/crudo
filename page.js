@@ -1,8 +1,15 @@
 import { supabase } from "../lib/supabaseClient";
 import ProductGrid from "./ProductGrid";
 
-// Vuelve a pedir los productos cada vez que alguien visita (sin caché vieja)
 export const revalidate = 0;
+
+// ===== Portada: cambiá estos textos y la foto cuando quieras =====
+// Si HERO_IMAGE queda vacío (""), se usa la foto del último producto cargado.
+const HERO_IMAGE = "";
+const HERO_KICKER = "Nueva colección";
+const HERO_TITLE = "Prendas de producción propia";
+const HERO_BUTTON = "Ver productos";
+// ================================================================
 
 export default async function Home() {
   const { data: products, error } = await supabase
@@ -12,9 +19,11 @@ export default async function Home() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    // Esto aparece en Vercel > Logs para poder diagnosticar el problema real
     console.error("Error consultando Supabase:", JSON.stringify(error));
   }
+
+  const firstWithPhoto = (products || []).find((p) => (p.image_url || "").trim());
+  const heroImg = HERO_IMAGE || (firstWithPhoto ? firstWithPhoto.image_url.split(",")[0].trim() : "");
 
   return (
     <>
@@ -25,6 +34,17 @@ export default async function Home() {
           </div>
         </div>
       </header>
+
+      <section className="hero" style={heroImg ? { backgroundImage: `url("${heroImg}")` } : undefined}>
+        <div className="hero-content">
+          <div className="hero-kicker">{HERO_KICKER}</div>
+          <h1 className="hero-title">{HERO_TITLE}</h1>
+          <a href="#productos" className="hero-btn">
+            {HERO_BUTTON}
+          </a>
+        </div>
+      </section>
+
       <ProductGrid
         initialProducts={products || []}
         loadError={!!error}
